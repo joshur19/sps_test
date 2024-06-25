@@ -1,7 +1,7 @@
 """
 file: base instrument class from which specific instrument classes are derived
 author: josh
-last updated: 14/06/2024
+last updated: 25/06/2024
 """
 
 # idea: create a class "instrument" that respresents a general t&m instrument with all its basic functions
@@ -28,9 +28,8 @@ class BaseInstrument:
 
     def initialize(self):
         if self.connect():
-            self.instrument.write('*RST')
-            self.instrument.write('*CLS')
-            tags.log('Instrument', "Succesfully connected to instrument.")
+            id = self.instrument.query('*IDN?')
+            tags.log('Instrument', f"Succesfully connected to instrument {id}")
             self.disconnect()
         else:
             tags.log('Instrument', 'Unable to connect to instrument.')

@@ -7,14 +7,15 @@ last updated: 25/06/2024
 import sys
 import sps
 import tags
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QRadioButton, QHBoxLayout, QGroupBox
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QRadioButton, QHBoxLayout, QMessageBox
+from PyQt5.QtGui import QDoubleValidator
 
 class PowerSupplyControl(QWidget):
     def __init__(self):
         super().__init__()
 
         self.sps = sps.SPS(tags.sps_addr)
-        #self.sps.initialize()
+        self.sps.initialize()
         
         self.initUI()
 
@@ -25,6 +26,10 @@ class PowerSupplyControl(QWidget):
         # Voltage input
         self.voltage_label = QLabel('Set Voltage (V):')
         self.voltage_input = QLineEdit(self)
+
+        # Set up the validator for voltage input (for example, range from 0 to 1000 volts)
+        self.voltage_validator = QDoubleValidator(0.0, 270, 2)  # min=0.0, max=1000.0, 2 decimal places
+        self.voltage_input.setValidator(self.voltage_validator)
 
         # AC/DC selection
         self.ac_radio = QRadioButton('AC', self)
@@ -78,18 +83,29 @@ class PowerSupplyControl(QWidget):
 
     def submit(self):
         voltage = self.voltage_input.text()
+        if not voltage or float(voltage) > 270:
+            self.show_error_message('Please enter a valid voltage.')
+            return
+
         if self.dc_radio.isChecked():
-            frequency = None
             self.sps.set_voltage_dc(voltage)
-            #tags.log('main', f'Set instrument to {voltage} VDC')
+            
         else:
             frequency = self.frequency_input.text()
-            self.sps.set_voltage_ac(voltage, frequency)
-            #tags.log('main', f'Set instrument to {voltage} VAC at {frequency} Hz')
+            if not frequency:
+                frequency = 50
 
+            self.sps.set_voltage_ac(voltage, frequency)
 
     def stop_amp(self):
         self.sps.set_amp_off()
+
+    def show_error_message(self, message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText(message)
+        msg.setWindowTitle("Input Error")
+        msg.exec_()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
