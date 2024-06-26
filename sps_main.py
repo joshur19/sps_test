@@ -1,14 +1,19 @@
 """
 file: main file containing the UI and instantiating the instrument
 author: josh
-last updated: 25/06/2024
+last updated: 26/06/2024
 """
+
+### General TODOs
+# (1) Implement queries to guarantee success of operations executed
+# (2) Optimize timing of commands to make program more efficient
 
 import sys
 import sps
 import tags
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout, QRadioButton, QHBoxLayout, QMessageBox
 from PyQt5.QtGui import QDoubleValidator
+from PyQt5.QtCore import QLocale
 
 class PowerSupplyControl(QWidget):
     def __init__(self):
@@ -29,6 +34,7 @@ class PowerSupplyControl(QWidget):
 
         # Set up the validator for voltage input (for example, range from 0 to 1000 volts)
         self.voltage_validator = QDoubleValidator(0.0, 270, 2)  # min=0.0, max=1000.0, 2 decimal places
+        self.voltage_validator.setLocale(QLocale(QLocale.English))  # ensure that the decimal dot is used to separate
         self.voltage_input.setValidator(self.voltage_validator)
 
         # AC/DC selection
@@ -83,7 +89,15 @@ class PowerSupplyControl(QWidget):
 
     def submit(self):
         voltage = self.voltage_input.text()
-        if not voltage or float(voltage) > 270:
+
+        try:
+            voltage = float(voltage)
+        except:
+            tags.log('main', 'Invalid voltage input.')
+            self.show_error_message('Invalid format of voltage input.')
+            return
+
+        if not voltage or voltage > 270:
             self.show_error_message('Please enter a valid voltage.')
             return
 
@@ -92,8 +106,9 @@ class PowerSupplyControl(QWidget):
             
         else:
             frequency = self.frequency_input.text()
-            if not frequency:
+            if not frequency or int(frequency) > 100:        # TODO: what is an invalid frequency range?
                 frequency = 50
+                self.frequency_input.setText('50')
 
             self.sps.set_voltage_ac(voltage, frequency)
 

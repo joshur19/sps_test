@@ -1,7 +1,7 @@
 """
 file: base instrument class from which specific instrument classes are derived
 author: josh
-last updated: 25/06/2024
+last updated: 26/06/2024
 """
 
 # idea: create a class "instrument" that respresents a general t&m instrument with all its basic functions
@@ -21,6 +21,8 @@ class BaseInstrument:
     def connect(self): 
         try:
             self.instrument = self.rm.open_resource(self.visa_address)
+            self.instrument.write_termination = '\n'
+            self.instrument.read_termination = '\n'
             return True
         except:
             tags.log('Instrument', 'Error connecting to instrument.')
@@ -33,10 +35,6 @@ class BaseInstrument:
             self.disconnect()
         else:
             tags.log('Instrument', 'Unable to connect to instrument.')
-
-    # TODO: this function is never really used
-    def set_timeout(self, timeout):
-        self.instrument.timeout = timeout
 
     def disconnect(self):
         self.instrument.close()
